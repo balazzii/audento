@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie-edge">
+    <title>Audento</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+</head>
+
+<body onload="onLoad();">
+    <header>
+        <h1>
+            Audento - Audio Drama Platform
+        </h1>
+        <p>
+            Record your audio, mix with existing audios and superimpose audios.
+        </p>
+    </header>
+    <section class="recordingSection">
+        <fieldset class="fieldSetRecord">
+            <legend>Record Audio</legend>
+            <button id="btnRecord" class="recordbtn notRec" onclick="recordClick()"></button>
+            <audio id="audRecord" class="audioRecordControl" controls></audio>
+            <button id="btnAddRecordingToMixer" class="w3-button w3-red w3-circle w3-xlarge addButton"
+                onclick="addRecordingToMixer()">+</button>
+        </fieldset>
+    </section>
+    <section class="mixer">
+        <h3>Final Audio</h3>
+        <audio id="audFinal" controls></audio>
+        <section id="finalAudioListSection" class="finalAudioList">
+        </section>
+    </section>
+    <aside class="aside" id="rightAside">
+        <div style="position: sticky; top: 0">
+            <h3>Pre-loaded audios</h3>
+        </div>
+        <section class="asideSection" id="rightAsideSection">
+
+        </section>
+    </aside>
+    <footer>
+        <small>
+            &copy;Audento 2023
+        </small>
+    </footer>
+</body>
+
+</html>

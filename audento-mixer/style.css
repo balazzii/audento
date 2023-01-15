@@ -1,0 +1,110 @@
+body {
+    width: 80%;
+    margin: 0 auto;
+}
+
+li{
+    display: block;
+    border:1px solid red /* demo */
+}
+
+.fieldSetRecord {
+    border: 1px dashed black;
+}
+
+.finalListItem {
+    margin: 1.5%;
+}
+
+.btnDelete {
+    background-color: dodgerblue; /* Blue background */
+    border: none; /* Remove borders */
+    color: white; /* White text */
+    padding: 12px 16px; /* Some padding */
+    font-size: 16px; /* Set a font size */
+    cursor: pointer; /* Mouse pointer on hover */
+}
+
+.btnDelete:hover {
+    background-color: royalblue;
+}
+
+.finalAudioText {
+    margin-left: 1.5%;
+}
+
+
+.recordingSection {
+    width: 93%;
+    margin-left: 1.5%;
+}
+
+.mixer {
+    width: 40%;
+    float: left;
+    margin: 1.5% 1.5%;
+    border: 1px solid black;
+    height: 400px;
+}
+
+.aside {
+    width: 50%;
+    float: left;
+    margin: 1.5% 1.5%;
+    height: 400px;
+    border: 1px solid black;
+}
+
+.asideSection {
+    overflow: scroll;
+    height: 300px;
+}
+
+.footer {
+    clear: both;
+    content: "";
+    display: table;
+}
+
+.audio-container {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: medium;
+    outline: dashed 1px black;
+    align-items: center;
+    vertical-align:top;
+}
+
+.finalAudioList {
+    height: 200px;
+    overflow: scroll;
+}
+
+.notRec{
+	background-color: darkred;
+}
+
+.Rec{
+	animation-name: pulse;
+	animation-duration: 1.5s;
+	animation-iteration-count: infinite;
+	animation-timing-function: linear;
+}
+
+.startRec {
+    background-color: red;
+}
+
+.recordbtn {
+	width: 35px;
+	height: 35px;
+	font-size: 0;
+	border: 0;
+	border-radius: 35px;
+    margin: 10px;
+	outline: none;
+    vertical-align: top;
+}
+
+.addButton {
+    vertical-align: top;
+}
