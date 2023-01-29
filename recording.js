@@ -81,6 +81,8 @@ if (navigator.mediaDevices.getUserMedia) {
       addRecDiv.classList.add("col-md-2");
       addRecDiv.classList.add("col-sm-4");
       const addRec = document.createElement('button');
+      addRec.classList.add('btn')
+      addRec.classList.add('btn-info')
       addRec.innerHTML = 'Mix';
       const addRecIcon = document.createElement('i');
       addRecIcon.classList.add('bi');
@@ -97,6 +99,8 @@ if (navigator.mediaDevices.getUserMedia) {
       delRecDiv.classList.add("col-md-2");
       delRecDiv.classList.add("col-sm-4");
       const delRec = document.createElement('button');
+      delRec.classList.add('btn')
+      delRec.classList.add('btn-dark')
       delRec.innerHTML = 'Trash';
       const delRecIcon = document.createElement('i');
       delRecIcon.classList.add('bi');
@@ -186,5 +190,80 @@ function visualize(stream) {
     canvasCtx.lineTo(canvas.width, canvas.height/2);
     canvasCtx.stroke();
 
+  }
+}
+
+let audioFilesMap = new Map();
+function onLoad(){
+  // this has to be decided on server side but for this example, the sound files are hardcoded
+  let sounds = ["audento-mixer/sounds/applause.mp3",
+  //"audento-mixer/sounds/birds.mp3",
+  //"audento-mixer/sounds/cinematic.mp3",
+  "audento-mixer/sounds/door.mp3",
+  "audento-mixer/sounds/landslide.mp3",
+  "audento-mixer/sounds/piano.mp3",
+  "audento-mixer/sounds/rain.mp3",
+  "audento-mixer/sounds/yodel.mp3"
+  ]
+
+  // load audio files
+  sounds.forEach(createPreloadedContainers);
+}
+
+function createPreloadedContainers(item) {
+  const preLoadedContainer = document.getElementById("preLoadedRow");
+  
+  const div = document.createElement('div');
+  div.classList.add('col');
+  div.classList.add('col-sm-6');
+  div.classList.add('col-md-4');
+  div.classList.add('col-lg-3');
+  div.classList.add('preloadedContainers');
+
+  const h6 = document.createElement('h6');
+  h6.classList.add('card-subtitle');
+  h6.classList.add('mb-2');
+  h6.classList.add('text-muted');
+  var text = item.substring(21, item.length - 4);
+  h6.innerHTML = text;
+
+  const button = document.createElement("button");
+  button.classList.add('btn');
+  button.classList.add('btn-light');
+  
+  const image = document.createElement('img');
+  image.src = 'audento-mixer/wave.jpeg';
+  image.width='100';
+  button.appendChild(image);
+
+  const addRec = document.createElement('button');
+  addRec.classList.add('btn')
+  addRec.classList.add('btn-info')
+  addRec.innerHTML = 'Mix';
+  const addRecIcon = document.createElement('i');
+  addRecIcon.classList.add('bi');
+  addRecIcon.classList.add('bi-plus');
+  addRecIcon.classList.add('btnAddRec');
+  addRec.appendChild(addRecIcon);
+
+  div.appendChild(h6);
+  div.appendChild(button);
+  div.appendChild(addRec);
+
+  preLoadedContainer.appendChild(div);
+
+  button.onclick = function() {
+    if(!audioCtx) {
+      audioCtx = new AudioContext();
+    }
+    window.fetch(item)
+    .then(response => response.arrayBuffer())
+    .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
+    .then(audioBuffer => {
+      const source = audioCtx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioCtx.destination);
+      source.start();
+    });
   }
 }

@@ -3,3 +3,15 @@ canvas {
     margin-bottom: 0.5rem;
     margin-top: 0.5rem;
   }
+
+.recordContainer {
+  margin: 1rem;
+}
+
+.preloadedContainer {
+  margin: 1rem;
+}
+
+.preloadedContainers {
+  margin: 1rem;
+}

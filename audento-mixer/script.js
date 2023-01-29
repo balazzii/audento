@@ -1,18 +1,37 @@
 let audioFilesMap = new Map();
 let recordings = new Map();
 let count = 0;
-let audioContext;
+let audioContext = new AudioContext();
+let mediaRecorder = null;
+let chunks = [];
 
+let constraints = {
+    audio: true,
+    video: false
+}
 
-function onLoad(){
-    // this has to be decided on server side but for this example, the sound files are hardcoded
-    let sounds = ["sounds/applause.mp3",
-    "sounds/birds.mp3",
-    "sounds/cinematic.mp3",
+navigator.mediaDevices.getUserMedia(constraints).then((stream) => 
+{
+    mediaRecorder = new MediaRecorder(stream);
+    
+    mediaRecorder.ondataavailable = function(e) {
+        chunks.push(e.data);
+    }
+    
+    mediaRecorder.onstop = function(e) {
+        let recordAudioElement = document.getElementById(audRecord);
+        const blob = new Blob(chunks, { 'type' : 'audio/ogg; codecs=opus' });
+        const audioURL = window.URL.createObjectURL(blob);
+        recordAudioElement.src = audioURL;
+    }
+
+}, 
+{
     "sounds/door.mp3",
     "sounds/landslide.mp3",
     "sounds/piano.mp3",
-    "sounds/rain.mp3"
+    "sounds/rain.mp3",
+    "sounds/yodel.mp3"
     ]
 
     // load audio files
@@ -28,7 +47,6 @@ function createAudioContainers(item){
 
 function createAddToMixerButton(source){
     let button = document.createElement("button");
-    //button.classList.add("addToMixerButton");
     button.classList.add("w3-button");
     button.classList.add("w3-circle");
     button.classList.add("w3-red");
@@ -43,15 +61,18 @@ function createAddToMixerButton(source){
 
 function handleAddToFinalList(source) {
     let key = count;
-    audioContext = new AudioContext();
-    fetch(source,{mode: "no-cors"})
-    .then((response)=> response.arrayBuffer())
-    .then((arrayBuffer) => 
-    {
-        var decoded = audioContext.decodeAudioData(arrayBuffer);
-        // audioContext.decodeAudioData(response,(arrayBuffer) => 
-        // {
-            audioFilesMap.set(key, decoded);   
+
+    let request = new XMLHttpRequest();
+    request.open("GET", source, true);
+    request.responseType = "arraybuffer";
+
+    request.onload = () => {
+        let audioData = request.response;
+
+        audioContext.decodeAudioData(
+          audioData,
+          (buffer) => {
+            audioFilesMap.set(key, buffer);
             let list = document.getElementById("finalAudioListSection");
             
             let item = document.createElement("div");
@@ -64,26 +85,38 @@ function handleAddToFinalList(source) {
             button.addEventListener('click', function() {
                 audioFilesMap.delete(key);
                 list.removeChild(item);
+
+                if(audioFilesMap.size > 0){
+                    document.getElementById("finalAudio").disabled = false;
+                }
+                else{
+                    document.getElementById("finalAudio").disabled = true;
+                }
             });
 
             let span = document.createElement("span");
             span.innerHTML = source.substring(7, source.length - 4);
             span.classList.add("finalAudioText");
+
+            if(audioFilesMap.size > 0){
+                document.getElementById("finalAudio").disabled = false;
+            }
+            else{
+                document.getElementById("finalAudio").disabled = true;
+            }
             
             item.appendChild(button);
             item.appendChild(span);
             list.appendChild(item);
-
-            let finalAudio = document.getElementById("audFinal");
-            let data = [];
-            audioFilesMap.forEach((value) => {
-                data.push(value);
-            });
-            let blob = new Blob(data.flat(),{ type: "audio/wav" });
-            finalAudio.src = URL.createObjectURL(blob);
-            // increase count which is used as key
             count++;
-    });
+          },
+          (e) => {
+            `Error with decoding audio data ${e.error}`;
+          }
+        );
+      };
+
+    request.send(null);
 }
 
 function getAudioFromFile(source) {
@@ -130,23 +163,28 @@ function recordClick(){
         button.classList.remove("notRec");
         button.classList.add("startRec");
         button.classList.add("Rec");
-
-        let constraints = {
-			audio: true,
-			video: false
-		}
-
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-			console.log("getUserMedia supported");
-            let media = navigator.mediaDevices.getUserMedia(constraints);
-
-		} else {
-			console.log("getUserMedia is not supported on your browser!")
-		}
+        mediaRecorder.start();
     }
     else{
         button.classList.remove("startRec");
         button.classList.remove("Rec");
         button.classList.add("notRec");
+        mediaRecorder.stop();
     }
+}
+
+function finalClick(){
+    audioFilesMap.forEach((value) => {
+        let source = new AudioBufferSourceNode(audioContext);
+        source.buffer = value;
+        source.connect(audioContext.destination);
+        source.start(0);
+        sleep(value.duration);
+    });
+}
+
+function sleep(seconds) 
+{
+  var e = new Date().getTime() + (seconds * 1000);
+  while (new Date().getTime() <= e) {}
 }
