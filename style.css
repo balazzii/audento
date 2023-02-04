@@ -2,6 +2,7 @@ canvas {
     display: block;
     margin-bottom: 0.5rem;
     margin-top: 0.5rem;
+    width: 100%;
   }
 
 .recordContainer {
@@ -14,4 +15,40 @@ canvas {
 
 .preloadedContainers {
   margin: 1rem;
+}
+
+.boxAudiosContainer {
+  width: 100%;
+  height: 5rem;
+  background-color: darkslategrey;
+  border-radius: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.boxAudios {
+  border: 3px solid #666;
+  background-color: #ddd;
+  border-radius: .5em;
+  margin-top: 1rem;
+  padding: 10px;
+  height: 3rem;
+  cursor: move;
+}
+
+.label {
+  width:200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1rem;
+}
+
+.label:hover {
+  white-space: normal;
+}
+
+.labelContainer {
+  padding-top: 1.5rem;
 }

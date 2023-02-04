@@ -40,7 +40,18 @@
     <div class="card container finalAudioContainer" id="finalAudioContainer">
         <div class="card-body">
             <h3 class="card-title">Final Audio</h5>
-            <div class="row" id="finalAudioRow">
+            <div class="container" id="finalAudioRows">
+            </div>
+            <div class="row">
+                <div class="col col-sm-3 col-md-2 col-lg-1">
+                    <button class="btn btn-success" id="playFinal" onclick="playFinal()" disabled style="margin-top: 0.5rem;">Play <i class="bi bi-play"></i></button>
+                </div>
+                <div class="col col-sm-3 col-md-2 col-lg-1">
+                    <button class="btn btn-danger" id="stopFinal" onclick="stopFinal()" disabled style="margin-top: 0.5rem;">Stop <i class="bi bi-stop"></i></button>
+                </div>
+                <div class="col col-sm-6 col-md-8 col-lg-10">
+                    <button class="btn btn-warning" style="margin-top: 0.5rem;" disabled>Sign Up & <i class="bi bi-download"></i></button>
+                </div>
             </div>
         </div>
     </div>
