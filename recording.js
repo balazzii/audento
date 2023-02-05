@@ -3,16 +3,28 @@
 const record = document.getElementById("record");
 const stopRec = document.getElementById("stopRec");
 const canvas = document.getElementById("visualizer");
+const canvasFinalLine = document.getElementById("finalLine");
 
-// disable stop button while not recording
-
-//stopRec.disabled = true;
+let audioFilesMap = new Map();
+let finalAudioBufferSourceNodes = [];
+let count = 0;
+let finalAudioBufferSourceNodeEndedCount = 0;
 
 // visualiser setup - create web audio api context and canvas
 
 let audioCtx;
-let totalSecs = 50;
+let totalSecs = 100;
 const canvasCtx = canvas.getContext("2d");
+const finalLineCtx = canvasFinalLine.getContext("2d");
+
+// draw final line
+let width = canvasFinalLine.width;
+let half = canvasFinalLine.height/2;
+finalLineCtx.beginPath();
+finalLineCtx.moveTo(0, half);
+finalLineCtx.lineTo(width, half);
+finalLineCtx.lineWidth = 1;
+finalLineCtx.stroke();
 
 //main block for doing the audio recording
 
@@ -126,11 +138,13 @@ if (navigator.mediaDevices.getUserMedia) {
           audioCtx.decodeAudioData(arrayBuffer, (audioBuffer) => {
             // Do something with audioBuffer
             console.log(audioBuffer);
-            let key = count;
+            let key = "finalElement" + count;
             audioFilesMap.set(key, {
               name: "Recording",
-              buffer: audioBuffer
+              buffer: audioBuffer,
+              secDelay: 0
             });
+            addToFinalAudio("Recording", audioBuffer,key);
             count++;
           }));
       }
@@ -143,12 +157,17 @@ if (navigator.mediaDevices.getUserMedia) {
 
   let onError = function(err) {
     console.log('The following error occured: ' + err);
+    let warn = document.getElementById("warningLabel");
+    warn.hidden = false;
+    record.disabled = true;
+    stopRec.disabled = true;
   }
 
   navigator.mediaDevices.getUserMedia(constraints).then(onSuccess, onError);
 
-} else {
-   console.log('getUserMedia not supported on your browser!');
+}
+else {
+    console.log('getUserMedia not supported on your browser!');
 }
 
 function visualize(stream) {
@@ -208,8 +227,6 @@ function visualize(stream) {
   }
 }
 
-let audioFilesMap = new Map();
-let count = 0;
 function onLoad(){
   // this has to be decided on server side but for this example, the sound files are hardcoded
   let sounds = ["audento-mixer/sounds/applause.mp3",
@@ -223,33 +240,6 @@ function onLoad(){
   // load audio files
   sounds.forEach(createPreloadedContainers);
 }
-
-function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
-  if (typeof stroke == "undefined" ) {
-    stroke = true;
-  }
-  if (typeof radius === "undefined") {
-    radius = 5;
-  }
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + width - radius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-  ctx.lineTo(x + width, y + height - radius);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  ctx.lineTo(x + radius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
-  if (stroke) {
-    ctx.stroke();
-  }
-  if (fill) {
-    ctx.fill();
-  }        
-}
-
 function createPreloadedContainers(item) {
   const preLoadedContainer = document.getElementById("preLoadedRow");
   
@@ -269,7 +259,7 @@ function createPreloadedContainers(item) {
 
   const button = document.createElement("button");
   button.classList.add('btn');
-  button.classList.add('btn-primary');
+  button.classList.add('btn-secondary');
   
   const image = document.createElement('img');
   image.src = 'audento-mixer/wave.jpeg';
@@ -293,18 +283,35 @@ function createPreloadedContainers(item) {
   preLoadedContainer.appendChild(div);
 
   button.onclick = function() {
-    if(!audioCtx) {
-      audioCtx = new AudioContext();
+    let audioSource = null;
+    if(button.classList.contains("btn-secondary")){
+      button.classList.remove("btn-secondary");
+      button.classList.add("btn-primary");
+      if(!audioCtx) {
+        audioCtx = new AudioContext();
+      }
+      window.fetch(item)
+      .then(response => response.arrayBuffer())
+      .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
+      .then(audioBuffer => {
+        const source = audioCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioCtx.destination);
+        source.start();
+        source.addEventListener("ended", () => {
+          button.classList.remove("btn-primary");
+          button.classList.add("btn-secondary");
+        });
+        audioSource = source;
+      });
     }
-    window.fetch(item)
-    .then(response => response.arrayBuffer())
-    .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
-    .then(audioBuffer => {
-      const source = audioCtx.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(audioCtx.destination);
-      source.start();
-    });
+    else {
+      button.classList.remove("btn-primary");
+      button.classList.add("btn-secondary");
+      if(audioSource) {
+        audioSource.stop();
+      }
+    }
   }
 
   mixButton.onclick = function() {
@@ -313,26 +320,26 @@ function createPreloadedContainers(item) {
     .then(response => response.arrayBuffer())
     .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
     .then(audioBuffer => {
-      let key = count;
-      let lastAudioDuration = 0;
-      if(audioFilesMap.size > 0){
-        audioFilesMap.forEach((v) => {
-          lastAudioDuration += v.buffer.duration;
-        });
-      }
+      let key = "finalElement" + count;
       audioFilesMap.set(key, {
         name: text,
-        buffer: audioBuffer
+        buffer: audioBuffer,
+        secDelay: 0
       });
-      addToFinalAudio(text, audioBuffer, (lastAudioDuration/totalSecs) * 100);
+      addToFinalAudio(text, audioBuffer,key);
       count++;
     });
   }
 }
 
-function addToFinalAudio(name, audioBuffer, lastAudioDurationPercentage) {
+function addToFinalAudio(name, audioBuffer, id) {
   let playButton = document.getElementById("playFinal");
   playButton.disabled = false;
+  let pauseButton = document.getElementById("pauseFinal");
+  pauseButton.disabled = false;
+
+  let finalLine = document.getElementById("finalLine");
+  finalLine.hidden = false;
 
   let percentageAudio = (audioBuffer.duration / totalSecs) * 100;
   const container = document.getElementById("finalAudioRows");
@@ -341,37 +348,93 @@ function addToFinalAudio(name, audioBuffer, lastAudioDurationPercentage) {
 
   let divLabel = document.createElement("div");
   divLabel.classList.add("col");
-  divLabel.classList.add("col-lg-1");
-  divLabel.classList.add("col-md-2");
-  divLabel.classList.add("col-sm-2");
+  divLabel.classList.add("col-lg-2");
+  divLabel.classList.add("col-md-3");
+  divLabel.classList.add("col-sm-3");
   divLabel.classList.add("labelContainer");
+  let delButton = document.createElement("button");
+  delButton.classList.add("btn");
+  delButton.classList.add("btn-dark");
+  let delIcon = document.createElement("i");
+  delIcon.classList.add("bi");
+  delIcon.classList.add("bi-trash");
+  delButton.appendChild(delIcon);
   let label = document.createElement("span");
   label.classList.add("label");
   label.classList.add("label-md");
   label.classList.add("text-primary");
+  label.style.marginLeft = "1rem";
   label.innerHTML = name;
+  divLabel.appendChild(delButton);
   divLabel.appendChild(label);
 
   let elementCol = document.createElement("div");
   elementCol.classList.add("col");
-  elementCol.classList.add("col-lg-11");
-  elementCol.classList.add("col-md-10");
-  elementCol.classList.add("col-sm-10");
+  elementCol.classList.add("col-lg-10");
+  elementCol.classList.add("col-md-9");
+  elementCol.classList.add("col-sm-9");
   let element = document.createElement("div");
   element.classList.add("boxAudios");
   element.draggable = "true";
-  //element.style.paddingLeft = lastAudioDurationPercentage + "%"
   element.style.width = percentageAudio + "%";
+  element.style.left = "0%";
+  element.id = id;
 
   elementCol.appendChild(element);
   elementRow.appendChild(divLabel);
   elementRow.appendChild(elementCol);
   container.appendChild(elementRow);
+
+  delButton.onclick = function(){
+    audioFilesMap.delete(id);
+    container.removeChild(elementRow);
+    if(audioFilesMap.size === 0){
+      changeToPlayButton();
+      playButton.disabled = true;
+      finalLine.hidden = true;
+    }
+  }
+  dragElement(element,elementCol);
+}
+
+function dragElement(elmnt,elementCol) {
+  var pos1 = 0;
+  let containerOffsetWidth = elementCol.offsetWidth;
+  let containerOffsetX = elementCol.offsetLeft;
+  let containerWidth = containerOffsetWidth - containerOffsetX;
+  elmnt.onmousedown = dragMouseDown;
+
+  function dragMouseDown(e) {
+    e = e || window.event;
+    e.preventDefault();
+    pos1 = e.clientX;
+    document.onmouseup = closeDragElement;
+    document.onmousemove = elementDrag;
+  }
+
+  function elementDrag(e) {
+    e = e || window.event;
+    e.preventDefault();
+    // calculate the new cursor position:
+    let newPos = e.clientX - pos1;
+    let percentage = (newPos/containerWidth);
+    let existingLeft = parseFloat(elmnt.style.left);
+    if(existingLeft + percentage > 0 && existingLeft + percentage + parseFloat(elmnt.style.width) <  100){
+      elmnt.style.left = existingLeft + percentage + "%";
+    }
+
+    var buffer = audioFilesMap.get(elmnt.id);
+    buffer.secDelay = parseFloat(elmnt.style.left);
+  }
+
+  function closeDragElement() {
+    // stop moving when mouse button is released:
+    document.onmouseup = null;
+    document.onmousemove = null;
+  }
 }
 
 function playFinal(){
-  let playButton = document.getElementById("playFinal");
-  playButton.disabled = true;
   let stopButton = document.getElementById("stopFinal");
   stopButton.disabled = false;
 
@@ -382,28 +445,57 @@ function playFinal(){
   if (audioCtx.state === "suspended") {
     audioCtx.resume();
   }
-
-  audioFilesMap.forEach((v) => {
-    const trackSource = new AudioBufferSourceNode(audioCtx, {
-      buffer: v.buffer,
+  changeToPauseButton();
+    audioFilesMap.forEach((v) => {
+      const trackSource = new AudioBufferSourceNode(audioCtx, {
+        buffer: v.buffer,
+      });
+      trackSource.connect(audioCtx.destination);
+      let secDelay = v.secDelay;
+      if (secDelay == 0) {
+        trackSource.start();
+      } else {
+        trackSource.start(audioCtx.currentTime + secDelay);
+      }
+      trackSource.addEventListener("ended", () => {
+        finalAudioBufferSourceNodeEndedCount++;
+        if(finalAudioBufferSourceNodeEndedCount === audioFilesMap.size ) {
+          changeToPlayButton();
+          finalAudioBufferSourceNodeEndedCount = 0;
+        }
+      });
+      finalAudioBufferSourceNodes.push(trackSource);
     });
-    trackSource.connect(audioCtx.destination);
-    let offset = 0;
-    if (offset == 0) {
-      trackSource.start();
-      offset = audioCtx.currentTime;
-    } else {
-      trackSource.start(0, offset);
-    }
+  }
+
+function pauseFinal(){
+  audioCtx.suspend().then(()=>{
+    changeToPlayButton();
   });
 }
 
-function stopFinal() {
+function changeToPauseButton(){
   let playButton = document.getElementById("playFinal");
+  playButton.hidden = true;
+
+  let pauseButton = document.getElementById("pauseFinal");
+  pauseButton.hidden = false;
+}
+
+function changeToPlayButton(){
+  let pauseButton = document.getElementById("pauseFinal");
+  pauseButton.hidden = true;
+
+  let playButton = document.getElementById("playFinal");
+  playButton.hidden = false;
+}
+
+function stopFinal() {
   let stopButton = document.getElementById("stopFinal");
-  audioCtx.suspend().then(() => {
-    console.log("audioContext suspended");
-    playButton.disabled = false;
-    stopButton.disabled = true;
+  finalAudioBufferSourceNodes.forEach((v) => {
+    v.stop();
   });
+  finalAudioBufferSourceNodes = [];
+  changeToPlayButton();
+  stopButton.disabled = true;
 }
