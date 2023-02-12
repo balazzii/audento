@@ -3,7 +3,17 @@
 const record = document.getElementById("record");
 const stopRec = document.getElementById("stopRec");
 const canvas = document.getElementById("visualizer");
-const canvasFinalLine = document.getElementById("finalLine");
+const canvasFinalLine = document.createElement('canvas');
+let finalLineDiv = document.getElementById("finalLineDiv");
+let finalLineLabel = document.getElementById("finalLineLabel");
+canvasFinalLine.width = finalLineDiv.offsetWidth;
+canvasFinalLine.height = 50;
+canvasFinalLine.setAttribute('width', finalLineDiv.offsetWidth - 15);
+canvasFinalLine.setAttribute('height', 50);
+canvasFinalLine.id = "finalLineCanvas";
+canvasFinalLine.hidden = true;
+finalLineLabel.hidden = true;
+finalLineDiv.appendChild(canvasFinalLine);
 
 let audioFilesMap = new Map();
 let finalAudioBufferSourceNodes = [];
@@ -18,13 +28,32 @@ const canvasCtx = canvas.getContext("2d");
 const finalLineCtx = canvasFinalLine.getContext("2d");
 
 // draw final line
-let width = canvasFinalLine.width;
-let half = canvasFinalLine.height/2;
+let width = parseInt(canvasFinalLine.width);
+let half = parseInt(canvasFinalLine.height)/2;
 finalLineCtx.beginPath();
 finalLineCtx.moveTo(0, half);
 finalLineCtx.lineTo(width, half);
 finalLineCtx.lineWidth = 1;
 finalLineCtx.stroke();
+
+let divisions = 50;
+let totalSecDivision = width / divisions;
+let valueAddition = Math.round(totalSecs / totalSecDivision);
+
+// draw axis
+let i = 0;
+let value = 0;
+while(i <= width)
+{
+  finalLineCtx.strokeText(value, i, half+10);
+  finalLineCtx.beginPath();
+  finalLineCtx.moveTo(i, half);
+  finalLineCtx.lineTo(i, half-5);
+  finalLineCtx.lineWidth = 1;
+  finalLineCtx.stroke();
+  i=i+divisions;
+  value = value + valueAddition;
+}
 
 //main block for doing the audio recording
 
@@ -139,12 +168,15 @@ if (navigator.mediaDevices.getUserMedia) {
             // Do something with audioBuffer
             console.log(audioBuffer);
             let key = "finalElement" + count;
+            let gainNode = audioCtx.createGain();
             audioFilesMap.set(key, {
               name: "Recording",
               buffer: audioBuffer,
-              secDelay: 0
+              secDelay: 0,
+              gainNode: gainNode,
             });
-            addToFinalAudio("Recording", audioBuffer,key);
+            gainNode.gain.value = 1;
+            addToFinalAudio("Recording", audioBuffer,key,gainNode);
             count++;
           }));
       }
@@ -321,25 +353,28 @@ function createPreloadedContainers(item) {
     .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
     .then(audioBuffer => {
       let key = "finalElement" + count;
+      let gainNode = audioCtx.createGain();
       audioFilesMap.set(key, {
         name: text,
         buffer: audioBuffer,
-        secDelay: 0
+        secDelay: 0,
+        gainNode: gainNode
       });
-      addToFinalAudio(text, audioBuffer,key);
+      gainNode.gain.value = 1;
+      addToFinalAudio(text, audioBuffer,key,gainNode);
       count++;
     });
   }
 }
 
-function addToFinalAudio(name, audioBuffer, id) {
+function addToFinalAudio(name, audioBuffer, id,gainNode) {
   let playButton = document.getElementById("playFinal");
   playButton.disabled = false;
   let pauseButton = document.getElementById("pauseFinal");
   pauseButton.disabled = false;
 
-  let finalLine = document.getElementById("finalLine");
-  finalLine.hidden = false;
+  canvasFinalLine.hidden = false;
+  finalLineLabel.hidden = false;
 
   let percentageAudio = (audioBuffer.duration / totalSecs) * 100;
   const container = document.getElementById("finalAudioRows");
@@ -352,6 +387,7 @@ function addToFinalAudio(name, audioBuffer, id) {
   divLabel.classList.add("col-md-3");
   divLabel.classList.add("col-sm-3");
   divLabel.classList.add("labelContainer");
+
   let delButton = document.createElement("button");
   delButton.classList.add("btn");
   delButton.classList.add("btn-dark");
@@ -359,20 +395,31 @@ function addToFinalAudio(name, audioBuffer, id) {
   delIcon.classList.add("bi");
   delIcon.classList.add("bi-trash");
   delButton.appendChild(delIcon);
+
   let label = document.createElement("span");
   label.classList.add("label");
   label.classList.add("label-md");
   label.classList.add("text-primary");
   label.style.marginLeft = "1rem";
   label.innerHTML = name;
+
+  let input = document.createElement("input");
+  input.type = "range";
+  input.classList.add("form-range");
+  input.min = 0;
+  input.max = 2;
+  input.value = 1;
+  input.step = 0.01;
   divLabel.appendChild(delButton);
   divLabel.appendChild(label);
+  divLabel.appendChild(input);
 
   let elementCol = document.createElement("div");
   elementCol.classList.add("col");
   elementCol.classList.add("col-lg-10");
   elementCol.classList.add("col-md-9");
   elementCol.classList.add("col-sm-9");
+
   let element = document.createElement("div");
   element.classList.add("boxAudios");
   element.draggable = "true";
@@ -391,8 +438,13 @@ function addToFinalAudio(name, audioBuffer, id) {
     if(audioFilesMap.size === 0){
       changeToPlayButton();
       playButton.disabled = true;
-      finalLine.hidden = true;
+      canvasFinalLine.hidden = true;
+      finalLineLabel.hidden = true;
     }
+  }
+
+  input.oninput = function(){
+    gainNode.gain.value = this.value;
   }
   dragElement(element,elementCol);
 }
@@ -450,7 +502,7 @@ function playFinal(){
       const trackSource = new AudioBufferSourceNode(audioCtx, {
         buffer: v.buffer,
       });
-      trackSource.connect(audioCtx.destination);
+      trackSource.connect(v.gainNode).connect(audioCtx.destination);
       let secDelay = v.secDelay;
       if (secDelay == 0) {
         trackSource.start();

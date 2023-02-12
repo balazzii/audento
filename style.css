@@ -2,7 +2,6 @@ canvas {
     display: block;
     margin-bottom: 0.5rem;
     margin-top: 0.5rem;
-    width: 100%;
   }
 
 .recordContainer {
@@ -51,5 +50,10 @@ canvas {
 }
 
 .labelContainer {
+  padding-top: 0.5rem;
+}
+
+#finalLineLabel {
+  text-align: right;
   padding-top: 1.5rem;
 }
