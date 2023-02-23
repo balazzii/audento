@@ -9,16 +9,24 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
 </head>
   <body onload="onLoad()">
-    <h1 class="display-1 text-center">Audento<img src="audento-mixer/logo.png" alt="logo" width="200" /></h1>
+    <nav class="navbar navbar-light bg-light">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">
+            <img src="audento-mixer/logo.png" alt="" width="30" height="24" class="d-inline-block align-text-top">
+            <i>dramaJet</i>
+          </a>
+        </div>
+    </nav>
     <div class="card container recordContainer">
         <div class="card-body">
             <h3 class="card-title">Record Audio</h5>    
             <div class="row">
-                <div class="col col-sm-3 col-md-2 col-lg-1">
+                <div class="col col-sm-6 col-md-4 col-lg-2">
                     <button id="record" class="btn btn-success">Record</button>
-                </div>
-                <div class="col col-sm-3 col-md-2 col-lg-1">
                     <button id="stopRec" class="btn btn-danger">Stop</button>
+                </div>
+                <div class="col col-sm-12 col-md-6 col-lg-6">
+                    <canvas id="visualizer" class="visualizer" height="20px"></canvas>
                 </div>
             </div>
             <div class="row">
@@ -26,9 +34,6 @@
                     <div class="alert alert-warning" role="alert">
                         Please enable audio to record audio.
                     </div>
-                </div>
-                <div class="col col-sm-12 col-md-6 col-lg-6">
-                    <canvas id="visualizer" class="visualizer" height="20px"></canvas>
                 </div>
             </div>
             <div class="row" id="recContainer"></div>
@@ -70,5 +75,6 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
     <script src="recording.js"></script>
+    <script src="https://unpkg.com/konva@8.4.2/konva.min.js"></script>
   </body>
 </html>

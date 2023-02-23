@@ -119,38 +119,33 @@ if (navigator.mediaDevices.getUserMedia) {
       // add button
       const addRecDiv = document.createElement('div');
       addRecDiv.classList.add("col");
-      addRecDiv.classList.add("col-lg-1");
-      addRecDiv.classList.add("col-md-2");
-      addRecDiv.classList.add("col-sm-4");
+      addRecDiv.classList.add("col-lg-2");
+      addRecDiv.classList.add("col-md-4");
+      addRecDiv.classList.add("col-sm-8");
       const addRec = document.createElement('button');
       addRec.classList.add('btn')
       addRec.classList.add('btn-info')
-      addRec.innerHTML = 'Mix';
       const addRecIcon = document.createElement('i');
       addRecIcon.classList.add('bi');
       addRecIcon.classList.add('bi-plus');
       addRecIcon.classList.add('btnAddRec');
       addRec.appendChild(addRecIcon);
       addRecDiv.appendChild(addRec);
-      divActionContainer.appendChild(addRecDiv);
       
       // delete button
-      const delRecDiv = document.createElement('div');
-      delRecDiv.classList.add("col");
-      delRecDiv.classList.add("col-lg-1");
-      delRecDiv.classList.add("col-md-2");
-      delRecDiv.classList.add("col-sm-4");
       const delRec = document.createElement('button');
       delRec.classList.add('btn')
       delRec.classList.add('btn-dark')
-      delRec.innerHTML = 'Trash';
+      // delRec.innerHTML = 'Trash';
       const delRecIcon = document.createElement('i');
       delRecIcon.classList.add('bi');
       delRecIcon.classList.add('bi-trash');
       delRecIcon.classList.add('btnTrash');
       delRec.appendChild(delRecIcon);
-      delRecDiv.appendChild(delRec);
-      divActionContainer.appendChild(delRecDiv);
+      addRecDiv.appendChild(delRec);
+      
+      divActionContainer.appendChild(addRecDiv);
+
 
 
       delRec.onclick = function() {
@@ -173,6 +168,9 @@ if (navigator.mediaDevices.getUserMedia) {
               name: "Recording",
               buffer: audioBuffer,
               secDelay: 0,
+              xPosition: 0,
+              playOffset: 0,
+              playDuration: audioBuffer.duration,
               gainNode: gainNode,
             });
             gainNode.gain.value = 1;
@@ -266,7 +264,10 @@ function onLoad(){
   "audento-mixer/sounds/landslide.mp3",
   "audento-mixer/sounds/rain.mp3",
   "audento-mixer/sounds/glass-falls.mp3",
-  "audento-mixer/sounds/yodel.mp3"
+  "audento-mixer/sounds/yodel.mp3",
+  "audento-mixer/sounds/piano.mp3",
+  "audento-mixer/sounds/cinematic.mp3",
+  "audento-mixer/sounds/birds.mp3"
   ]
 
   // load audio files
@@ -279,10 +280,10 @@ function createPreloadedContainers(item) {
   div.classList.add('col');
   div.classList.add('col-sm-6');
   div.classList.add('col-md-4');
-  div.classList.add('col-lg-3');
+  div.classList.add('col-lg-2');
   div.classList.add('preloadedContainers');
 
-  const h6 = document.createElement('h6');
+  const h6 = document.createElement('span');
   h6.classList.add('card-subtitle');
   h6.classList.add('mb-2');
   h6.classList.add('text-muted');
@@ -293,24 +294,24 @@ function createPreloadedContainers(item) {
   button.classList.add('btn');
   button.classList.add('btn-secondary');
   
-  const image = document.createElement('img');
-  image.src = 'audento-mixer/wave.jpeg';
-  image.width='100';
-  button.appendChild(image);
+  const icon = document.createElement('i');
+  icon.classList.add("bi");
+  icon.classList.add("bi-volume-up");
+  button.appendChild(icon);
 
   const mixButton = document.createElement('button');
   mixButton.classList.add('btn')
   mixButton.classList.add('btn-info')
-  mixButton.innerHTML = 'Mix';
+  // mixButton.innerHTML = 'Mix';
   const mixButtonIcon = document.createElement('i');
   mixButtonIcon.classList.add('bi');
   mixButtonIcon.classList.add('bi-plus');
   mixButtonIcon.classList.add('btnAddRec');
   mixButton.appendChild(mixButtonIcon);
 
-  div.appendChild(h6);
   div.appendChild(button);
   div.appendChild(mixButton);
+  div.appendChild(h6);
 
   preLoadedContainer.appendChild(div);
 
@@ -358,6 +359,9 @@ function createPreloadedContainers(item) {
         name: text,
         buffer: audioBuffer,
         secDelay: 0,
+        xPosition: 0,
+        playOffset: 0,
+        playDuration: audioBuffer.duration,
         gainNode: gainNode
       });
       gainNode.gain.value = 1;
@@ -376,7 +380,7 @@ function addToFinalAudio(name, audioBuffer, id,gainNode) {
   canvasFinalLine.hidden = false;
   finalLineLabel.hidden = false;
 
-  let percentageAudio = (audioBuffer.duration / totalSecs) * 100;
+  let percentageAudio = (audioBuffer.duration / totalSecs);
   const container = document.getElementById("finalAudioRows");
   let elementRow = document.createElement("div");
   elementRow.classList.add("row");
@@ -405,7 +409,8 @@ function addToFinalAudio(name, audioBuffer, id,gainNode) {
 
   let input = document.createElement("input");
   input.type = "range";
-  input.classList.add("form-range");
+  // input.classList.add("form-range");
+  input.classList.add("slider");
   input.min = 0;
   input.max = 2;
   input.value = 1;
@@ -419,18 +424,98 @@ function addToFinalAudio(name, audioBuffer, id,gainNode) {
   elementCol.classList.add("col-lg-10");
   elementCol.classList.add("col-md-9");
   elementCol.classList.add("col-sm-9");
+  elementCol.id = id;
 
-  let element = document.createElement("div");
-  element.classList.add("boxAudios");
-  element.draggable = "true";
-  element.style.width = percentageAudio + "%";
-  element.style.left = "0%";
-  element.id = id;
-
-  elementCol.appendChild(element);
   elementRow.appendChild(divLabel);
   elementRow.appendChild(elementCol);
   container.appendChild(elementRow);
+
+  let width = elementCol.offsetWidth;
+  let height = elementCol.offsetHeight;
+
+  let stage = new Konva.Stage({
+    container: id,
+    width: width,
+    height: height,
+  });
+
+  let layer = new Konva.Layer();
+
+  let audioWidth = percentageAudio * width;
+  var group = new Konva.Group({
+    x: 0,
+    y: 0,
+    width: audioWidth,
+    height: height - 1,
+    draggable: true,
+    dragBoundFunc: function (pos) {
+      let returnX = pos.x;
+      if(pos.x + audioWidth > width)
+        returnX = width - audioWidth;
+      
+      if(pos.x  < 0)
+        returnX = 0;
+      
+      let returnXPercentage = (returnX / width ) * totalSecs;
+      let buffer = audioFilesMap.get(id);
+      buffer.xPosition = returnX;
+      buffer.secDelay = returnXPercentage;
+
+      return {
+        x: returnX,
+        y: this.absolutePosition().y,
+      }
+    }
+  });
+  let baseRect = new Konva.Rect({
+    x: 0,
+    y: 0,
+    width: audioWidth,
+    height: height - 1,
+    fill: 'cyan',
+    cornerRadius: 10,
+  });
+  let rect = new Konva.Rect({
+    x: 0,
+    y: 0,
+    width: audioWidth,
+    height: height - 1,
+    fill: 'rgb(250, 220, 200)',
+    cornerRadius: 10,
+  });
+  group.add(baseRect);
+  group.add(rect);
+  layer.add(group);
+
+  rect.on('mouseenter', function () {
+    stage.container().style.cursor = 'pointer';
+  });
+
+  rect.on('mouseleave', function () {
+    stage.container().style.cursor = 'default';
+  });
+
+  let tr = new Konva.Transformer({
+    enabledAnchors: ['middle-right', 'middle-left'],
+    anchorCornerRadius: 5,
+    boundBoxFunc: function (oldBoundBox, newBoundBox) {
+      let buffer = audioFilesMap.get(id);
+      if(Math.abs(newBoundBox.x < buffer.xPosition)){
+        return oldBoundBox;
+      }
+      if(Math.abs(buffer.xPosition + newBoundBox.width > buffer.xPosition + audioWidth)){
+        return oldBoundBox;
+      }
+      buffer.playOffset = ((newBoundBox.x - buffer.xPosition) / audioWidth) * buffer.buffer.duration;
+      buffer.playDuration = (newBoundBox.width / audioWidth) * buffer.buffer.duration;
+      return newBoundBox;
+    },
+  });
+  layer.add(tr);
+  tr.nodes([rect]);
+
+  // add the layer to the stage
+  stage.add(layer);
 
   delButton.onclick = function(){
     audioFilesMap.delete(id);
@@ -446,7 +531,6 @@ function addToFinalAudio(name, audioBuffer, id,gainNode) {
   input.oninput = function(){
     gainNode.gain.value = this.value;
   }
-  dragElement(element,elementCol);
 }
 
 function dragElement(elmnt,elementCol) {
@@ -503,12 +587,7 @@ function playFinal(){
         buffer: v.buffer,
       });
       trackSource.connect(v.gainNode).connect(audioCtx.destination);
-      let secDelay = v.secDelay;
-      if (secDelay == 0) {
-        trackSource.start();
-      } else {
-        trackSource.start(audioCtx.currentTime + secDelay);
-      }
+      trackSource.start(audioCtx.currentTime + v.secDelay + v.playOffset, v.playOffset, v.playDuration);
       trackSource.addEventListener("ended", () => {
         finalAudioBufferSourceNodeEndedCount++;
         if(finalAudioBufferSourceNodeEndedCount === audioFilesMap.size ) {
