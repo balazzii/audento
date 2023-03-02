@@ -1,15 +1,28 @@
-canvas {
-    display: block;
-    margin-bottom: 0.5rem;
-    margin-top: 0.5rem;
-  }
+body {
+  background-color: #ffffe0 !important;
+}
+
+footer {
+  margin-top: 2rem;
+}
+.recordButtons{
+  margin-top: -1.5rem;
+}
 
 .recordContainer {
-  margin: 1rem;
+  margin-top: 1rem;
 }
 
 .preloadedContainer {
-  margin: 1rem;
+  margin-top: 1rem;
+}
+
+.finalAudioContainer {
+  margin-top: 1rem;
+}
+
+.scriptContainer {
+  margin-top: 1rem;
 }
 
 .preloadedContainers {
